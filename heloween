@@ -1,0 +1,108 @@
+local gui = Instance.new("ScreenGui")
+gui.IgnoreGuiInset = true
+gui.ResetOnSpawn = false
+gui.Parent = game:GetService("CoreGui")
+
+-- Фон (тёмно-фиолетовый с оранжевым оттенком)
+local bg = Instance.new("Frame")
+bg.Size = UDim2.new(1, 0, 1, 0)
+bg.BackgroundColor3 = Color3.fromRGB(25, 5, 25)
+bg.Parent = gui
+
+-- Искры (оранжевые звёзды)
+for i = 1, 120 do
+	local spark = Instance.new("Frame")
+	spark.Size = UDim2.new(0, 3, 0, 3)
+	spark.Position = UDim2.new(math.random(), 0, math.random(), 0)
+	spark.BackgroundColor3 = Color3.fromRGB(255, math.random(80,150), 0)
+	spark.BorderSizePixel = 0
+	spark.ZIndex = 1
+	spark.Parent = bg
+
+	task.spawn(function()
+		while true do
+			spark:TweenPosition(UDim2.new(math.random(), 0, math.random(), 0), "Out", "Sine", 2.5, true)
+			local size = math.random(2, 4)
+			spark:TweenSize(UDim2.new(0, size, 0, size), "Out", "Sine", 1.5, true)
+			task.wait(2)
+		end
+	end)
+end
+
+-- Огненные кометы (падающие звёзды)
+for i = 1, 6 do
+	task.spawn(function()
+		while true do
+			local flame = Instance.new("Frame")
+			flame.Size = UDim2.new(0, 3, 0, 20)
+			flame.BackgroundColor3 = Color3.fromRGB(255, math.random(120,180), 0)
+			flame.BorderSizePixel = 0
+			flame.ZIndex = 2
+			flame.Position = UDim2.new(math.random(), 0, -0.1, 0)
+			flame.Parent = bg
+
+			flame:TweenPosition(UDim2.new(math.random(), 0, 1.2, 0), "Out", "Linear", 1.8, true)
+			task.wait(2)
+			flame:Destroy()
+			task.wait(math.random(4, 8))
+		end
+	end)
+end
+
+-- Текст "Loading script..."
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 60)
+title.Position = UDim2.new(0, 0, 0.05, 0)
+title.Text = "Loading script..."
+title.TextColor3 = Color3.fromRGB(255, 140, 0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.Arcade
+title.TextSize = 40
+title.ZIndex = 10
+title.Parent = bg
+
+-- Анимация точек
+task.spawn(function()
+	local baseText = "Loading script"
+	local dots = 0
+	while true do
+		dots = (dots % 3) + 1
+		title.Text = baseText .. string.rep(".", dots)
+		task.wait(0.4)
+	end
+end)
+
+-- Прогресс бар
+local barBg = Instance.new("Frame")
+barBg.Size = UDim2.new(0.8, 0, 0, 35)
+barBg.Position = UDim2.new(0.1, 0, 0.75, 0)
+barBg.BackgroundColor3 = Color3.fromRGB(50, 20, 0)
+barBg.ZIndex = 5
+barBg.Parent = bg
+
+local bar = Instance.new("Frame")
+bar.Size = UDim2.new(0, 0, 1, 0)
+bar.BackgroundColor3 = Color3.fromRGB(255, 120, 0)
+bar.ZIndex = 6
+bar.Parent = barBg
+
+local percentText = Instance.new("TextLabel")
+percentText.Size = UDim2.new(1, 0, 1, 0)
+percentText.Text = "0%"
+percentText.BackgroundTransparency = 1
+percentText.TextColor3 = Color3.new(1, 1, 1)
+percentText.Font = Enum.Font.Arcade
+percentText.TextSize = 22
+percentText.ZIndex = 7
+percentText.Parent = barBg
+
+-- Плавная загрузка (30 секунд)
+task.spawn(function()
+	local totalTime = 30
+	for i = 0, totalTime do
+		local percent = math.floor((i / totalTime) * 100)
+		bar:TweenSize(UDim2.new(i / totalTime, 0, 1, 0), "Out", "Sine", 0.5, true)
+		percentText.Text = percent .. "%"
+		task.wait(1)
+	end
+end)
